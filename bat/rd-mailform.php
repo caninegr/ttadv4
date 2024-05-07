@@ -1,20 +1,9 @@
 <?php
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
-use PHPMailer\PHPMailer\Exception;
-
-require './phpmailer/PHPMailer.php';
-require './phpmailer/SMTP.php';
-require './phpmailer/Exception.php';
-
-$formConfigFile = file_get_contents("rd-mailform.config.json");
-$formConfig = json_decode($formConfigFile, true);
-
-date_default_timezone_set('Etc/UTC');
+$recipients = 'test@demolink.com';
 
 try {
-    $recipients = $formConfig['recipientEmail'];
+    require './phpmailer/PHPMailerAutoload.php';
 
     preg_match_all("/([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)/", $recipients, $addresses, PREG_OFFSET_CAPTURE);
 
@@ -32,7 +21,7 @@ try {
         return $_SERVER['REMOTE_ADDR'];
     }
 
-    if (preg_match('/^(127\.|192\.168\.|::1)/', getRemoteIPAddress())) {
+    if (preg_match('/^(127\.|192\.168\.)/', getRemoteIPAddress())) {
         die('MF002');
     }
 
@@ -57,10 +46,10 @@ try {
         die('MF004');
     }
 
-    if (isset($_POST['email'])) {
+    if (isset($_POST['contact-email'])) {
         $template = str_replace(
             array("<!-- #{FromState} -->", "<!-- #{FromEmail} -->"),
-            array("Email:", $_POST['email']),
+            array("Email:", $_POST['contact-email']),
             $template);
     }
 
@@ -71,14 +60,13 @@ try {
             $template);
     }
 
-    // In a regular expression, the character \v is used as "anything", since this character is rare
-    preg_match("/(<!-- #\{BeginInfo\} -->)([^\v]*?)(<!-- #\{EndInfo\} -->)/", $template, $matches, PREG_OFFSET_CAPTURE);
+    preg_match("/(<!-- #{BeginInfo} -->)(.|\n)+(<!-- #{EndInfo} -->)/", $template, $tmp, PREG_OFFSET_CAPTURE);
     foreach ($_POST as $key => $value) {
-        if ($key != "counter" && $key != "email" && $key != "message" && $key != "form-type" && $key != "g-recaptcha-response" && !empty($value)){
+        if ($key != "email" && $key != "message" && $key != "form-type" && $key != "g-recaptcha-response" && !empty($value)){
             $info = str_replace(
                 array("<!-- #{BeginInfo} -->", "<!-- #{InfoState} -->", "<!-- #{InfoDescription} -->"),
                 array("", ucfirst($key) . ':', $value),
-                $matches[0][0]);
+                $tmp[0][0]);
 
             $template = str_replace("<!-- #{EndInfo} -->", $info, $template);
         }
@@ -90,45 +78,7 @@ try {
         $template);
 
     $mail = new PHPMailer();
-
-
-    if ($formConfig['useSmtp']) {
-        //Tell PHPMailer to use SMTP
-        $mail->isSMTP();
-
-        //Enable SMTP debugging
-        // SMTP::DEBUG_OFF = off (for production use)
-        // SMTP::DEBUG_CLIENT = client messages
-        // SMTP::DEBUG_SERVER = client and server messages
-        $mail->SMTPDebug = SMTP::DEBUG_OFF;
-
-        $mail->Debugoutput = 'html';
-
-        // Set the hostname of the mail server
-        $mail->Host = $formConfig['host'];
-
-        // Set the SMTP port number - likely to be 25, 465 or 587
-        $mail->Port = $formConfig['port'];
-
-        // Whether to use SMTP authentication
-        $mail->SMTPAuth = true;
-        $mail->SMTPSecure = "ssl";
-
-        // Username to use for SMTP authentication
-        $mail->Username = $formConfig['username'];
-
-        // Password to use for SMTP authentication
-        $mail->Password = $formConfig['password'];
-        
-        // Set the sender's email
-        $mail->From = $formConfig['username'];
-    } else {
-        if ( isset( $_POST['email'] ) ) {
-            $mail->From = $_POST['email'];
-        } else {
-            $mail->From = $formConfig['username'];
-        }
-    }
+    $mail->From = $_POST['contact-email'];
 
     # Attach file
     if (isset($_FILES['file']) &&
@@ -153,8 +103,8 @@ try {
     $mail->send();
 
     die('MF000');
-} catch (Exception $e) {
+} catch (phpmailerException $e) {
     die('MF254');
-} catch (\Exception $e) {
+} catch (Exception $e) {
     die('MF255');
 }

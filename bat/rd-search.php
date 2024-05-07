@@ -108,7 +108,7 @@ if ($file_count > 0) {
       echo "<div class='search-quick-result'>Quick Results</div>";
     } ?>
 
-    <ol class="search-list">
+    <ol class="search_list">
       <?php
       $sum_of_results = 0;
       $match_count = 0;
@@ -119,7 +119,7 @@ if ($file_count > 0) {
           if (isset($_GET['liveSearch']) and $_GET['liveSearch'] != "" and $i >= $search_live_count) {
           } else {
             ?>
-            <li class="search-list-item">
+            <li class="result-item">
 
               <?php
               $replacement = [$final_result[$i]['page_title'][0],
@@ -144,14 +144,14 @@ if ($file_count > 0) {
       }
 
       if ($match_count == 0) {
-        echo '<li><div class="search-error">No results found for "<span class="search">' . $search_term . '</span>"<div/></li>';
+        echo '<li><div class="search_error">No results found for "<span class="search">' . $search_term . '</span>"<div/></li>';
       }
       ?>
       <?php
       if (isset($_GET['liveSearch']) and $_GET['liveSearch'] != "" and $match_count != 0) {
         ?>
-        <li class="search-list-item-all">
-          <a href='search-results.html?s=<?php echo $_GET['s']; ?>&amp;filter=<?php echo $search_filter_init; ?>'  class="search-submit">
+        <li class="search_all">
+          <a href='search-results.html?s=<?php echo $_GET['s']; ?>&amp;filter=<?php echo $search_filter_init; ?>'  class="search_submit">
             <?php
             echo "See other ";
             echo $sum_of_results;
